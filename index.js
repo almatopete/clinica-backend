@@ -4,7 +4,24 @@ const { PrismaClient } = require('@prisma/client')
 const app = express()
 const prisma = new PrismaClient()
 
-app.use(cors())
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://clinica-frontend-sigma.vercel.app'
+]
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  methods: ['GET', 'POST'],
+  credentials: true
+}
+app.use(cors(corsOptions))
+
 app.use(express.json())
 
 app.post('/api/citas', async (req, res) => {
