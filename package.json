@@ -7,6 +7,9 @@
     "start": "node index.js",
     "postinstall": "prisma generate"
   },
+  "prisma": {
+  "schema": "prisma/schema.prisma"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
