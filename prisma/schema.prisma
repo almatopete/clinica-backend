@@ -21,4 +21,23 @@ model Cita {
   fecha      DateTime
   motivo     String
   createdAt  DateTime @default(now())
+
+  horarioId  Int?     @unique
+  horario    Horario? @relation(fields: [horarioId], references: [id])
+}
+
+model Doctor {
+  id            Int            @id @default(autoincrement())
+  nombre        String
+  especialidad  String
+  horarios      Horario[]
+}
+
+model Horario {
+  id         Int      @id @default(autoincrement())
+  fechaHora  DateTime
+  doctor     Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId   Int
+
+  cita       Cita?    @relation
 }
