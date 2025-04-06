@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 async function enviarConfirmacionCita(cita) {
   await resend.emails.send({
-    from: 'Clinica <onboarding@resend.dev>',
+    from: 'Clinica <medicalcenter.infinityfreeapp.com>',
     to: cita.email,
     subject: 'Confirmación de Cita Médica',
     html: `

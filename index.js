@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const { PrismaClient } = require('@prisma/client')
-const { enviarConfirmacionCita } = require('./utils/email')
+const { enviarConfirmacionCita } = require('./utils/mailer')
 
 const app = express()
 const prisma = new PrismaClient()
