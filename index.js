@@ -98,6 +98,17 @@ app.get('/api/horarios/:doctorId', async (req, res) => {
   res.json(result)
 })
 
+app.get('/api/doctores/:id', async (req, res) => {
+  const id = parseInt(req.params.id)
+  const doctor = await prisma.doctor.findUnique({
+    where: { id }
+  })
+
+  if (!doctor) return res.status(404).json({ error: 'No encontrado' })
+  res.json(doctor)
+})
+
+
 
 
 

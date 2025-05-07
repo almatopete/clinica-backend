@@ -27,11 +27,15 @@ model Cita {
 }
 
 model Doctor {
-  id            Int            @id @default(autoincrement())
-  nombre        String
-  especialidad  String
-  horarios      Horario[]
+  id           Int       @id @default(autoincrement())
+  nombre       String
+  especialidad String
+  descripcion  String?     // Breve descripción
+  foto         String?     // URL de la foto
+  cv           String?     // Texto largo tipo "acerca de mí"
+  horarios     Horario[]
 }
+
 
 model Horario {
   id         Int      @id @default(autoincrement())

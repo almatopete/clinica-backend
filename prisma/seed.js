@@ -21,10 +21,39 @@ async function main() {
 
   // Crear doctores
   const doctores = await prisma.$transaction([
-    prisma.doctor.create({ data: { nombre: 'Dra. Ana Pérez', especialidad: 'Dermatología' } }),
-    prisma.doctor.create({ data: { nombre: 'Dr. Carlos Méndez', especialidad: 'Medicina General' } }),
-    prisma.doctor.create({ data: { nombre: 'Dra. Laura Ramírez', especialidad: 'Nutrición' } })
+    prisma.doctor.create({
+      data: {
+        nombre: 'Dr. Carlos Méndez',
+        especialidad: 'Medicina General',
+        descripcion: 'Atención integral y seguimiento a enfermedades comunes.',
+        foto: '/images/doctor.png',
+        cv: 'El Dr. Carlos Méndez ha sido médico general por más de 15 años, brindando atención primaria a familias enteras...'
+      }
+        
+    }),
+    prisma.doctor.create({
+      data: {
+       
+        nombre: 'Dra. Ana Pérez',
+        especialidad: 'Dermatología',
+        descripcion: 'Especialista en piel, cabello y uñas.',
+        foto: '/images/doctor2.png',
+        cv: 'La Dra. Ana Pérez se graduó de la UNAM y cuenta con más de 10 años de experiencia en dermatología clínica y estética...'
+      }
+       
+        
+    }),
+    prisma.doctor.create({
+      data: {
+        nombre: 'Dra. Juan Ramírez',
+        especialidad: 'Nutrición',
+        descripcion: 'Enfoque clínico y personalizado en planes alimenticios.',
+        foto: '/images/doctor4.png',
+        cv: 'Licenciado en Nutrición por el IPN, Juan ha trabajado con pacientes de todas las edades, enfocados en mejorar su salud alimentaria...'
+      }
+    })
   ])
+  
 
   const start = new Date()
   const horarios = []
