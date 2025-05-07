@@ -6,6 +6,10 @@ const { enviarConfirmacionCita } = require('./utils/mailer')
 const app = express()
 const prisma = new PrismaClient()
 
+const bcrypt = require('bcrypt')
+const { generarToken, verificarToken } = require('./utils/auth')
+
+
 const allowedOrigins = [
   'http://localhost:5173',
   'https://clinica-frontend-sigma.vercel.app'
@@ -26,7 +30,7 @@ app.use(cors(corsOptions))
 
 app.use(express.json())
 
-app.post('/api/citas', async (req, res) => {
+app.post('/api/citas', verificarToken, async (req, res) => {
   const { nombre, email, telefono, motivo, horarioId } = req.body
 
   const horario = await prisma.horario.findUnique({
@@ -45,7 +49,8 @@ app.post('/api/citas', async (req, res) => {
       telefono,
       motivo,
       fecha: horario.fechaHora,
-      horario: { connect: { id: horarioId } }
+      horario: { connect: { id: horarioId } },
+      user: { connect: { id: req.user.id } }
     }
   })
 
@@ -108,6 +113,38 @@ app.get('/api/doctores/:id', async (req, res) => {
   res.json(doctor)
 })
 
+app.post('/api/register', async (req, res) => {
+  const { nombre, email, password } = req.body
+
+  const existe = await prisma.user.findUnique({ where: { email } })
+  if (existe) return res.status(400).json({ error: 'El correo ya está registrado' })
+
+  const hash = await bcrypt.hash(password, 10)
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hash,
+      nombre
+    }
+  })
+
+  const token = generarToken(user)
+  res.json({ token, user: { id: user.id, email: user.email, nombre: user.nombre } })
+})
+
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body
+
+  const user = await prisma.user.findUnique({ where: { email } })
+  if (!user) return res.status(401).json({ error: 'Credenciales inválidas' })
+
+  const valido = await bcrypt.compare(password, user.password)
+  if (!valido) return res.status(401).json({ error: 'Credenciales inválidas' })
+
+  const token = generarToken(user)
+  res.json({ token, user: { id: user.id, email: user.email, nombre: user.nombre } })
+})
 
 
 
