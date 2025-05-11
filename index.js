@@ -23,7 +23,7 @@ const corsOptions = {
       callback(new Error('Not allowed by CORS'))
     }
   },
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'DELETE'],
   credentials: true
 }
 app.use(cors(corsOptions))
@@ -146,7 +146,53 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, user: { id: user.id, email: user.email, nombre: user.nombre } })
 })
 
+app.get('/api/users/me', verificarToken, async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { id: true, email: true, nombre: true, createdAt: true }
+  })
+  res.json(user)
+})
 
+
+app.get('/api/users/my-appointments', verificarToken, async (req, res) => {
+  const citas = await prisma.cita.findMany({
+    where: { user: { id: req.user.id } },
+    include: {
+      horario: {
+        include: {
+          doctor: true
+        }
+      }
+    },
+    orderBy: { fecha: 'asc' }
+  })
+
+  const result = citas.map(cita => ({
+    id: cita.id,
+    fecha: cita.fecha,
+    motivo: cita.motivo,
+    doctor: cita.horario?.doctor?.nombre || 'Desconocido'
+  }))
+
+  res.json(result)
+})
+
+app.delete('/api/citas/:id', async (req, res) => {
+  const id = parseInt(req.params.id)
+
+  try {
+    // 1. Eliminar la cita
+    await prisma.cita.delete({
+      where: { id }
+    })
+
+    res.json({ message: 'Cita cancelada correctamente' })
+  } catch (error) {
+    console.error('Error cancelando cita:', error)
+    res.status(500).json({ error: 'No se pudo cancelar la cita' })
+  }
+})
 
 
 app.listen(3000, () => {
