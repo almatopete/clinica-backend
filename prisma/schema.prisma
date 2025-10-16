@@ -13,21 +13,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Añade estos enums
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum EstadoCita {
+  PROGRAMADA
+  CONFIRMADA
+  ATENDIDA
+  CANCELADA
+  NO_SHOW
+}
+
 model Cita {
-  id         Int      @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   nombre     String
   email      String
   telefono   String
   fecha      DateTime
   motivo     String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime    @default(now())
+  estado     EstadoCita  @default(PROGRAMADA)
 
-  horarioId  Int?     @unique
-  horario    Horario? @relation(fields: [horarioId], references: [id])
+  // Relación con Horario (dejarla opcional para liberar slot al cancelar)
+  horarioId  Int?        @unique
+  horario    Horario?    @relation(fields: [horarioId], references: [id])
 
-  // Nueva relación con usuario
-  userId     Int?     
-  user       User?    @relation(fields: [userId], references: [id])
+  userId     Int?
+  user       User?       @relation(fields: [userId], references: [id])
+
+  @@index([fecha])
 }
 
 model Doctor {
@@ -45,7 +63,6 @@ model Horario {
   fechaHora  DateTime
   doctor     Doctor   @relation(fields: [doctorId], references: [id])
   doctorId   Int
-
   cita       Cita?
 }
 
@@ -54,7 +71,7 @@ model User {
   email     String   @unique
   password  String
   nombre    String
+  role      Role     @default(PATIENT)
   createdAt DateTime @default(now())
-
-  citas     Cita[]   // Relación: un usuario puede tener muchas citas
+  citas     Cita[]
 }
