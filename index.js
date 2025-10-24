@@ -303,9 +303,50 @@ app.get('/api/reportes/ocupacion.csv', verificarToken, requireRole('ADMIN'), asy
   res.setHeader('Content-Disposition', 'attachment; filename="ocupacion.csv"')
   res.send(csv)
 })
+// Obtener detalle de una cita por ID
+app.get(
+  '/api/citas/:id',
+  verificarToken,
+  validarIdParam,
+  handleValidation,
+  async (req, res) => {
+    const id = Number(req.params.id)
 
+    // Traemos la cita con joins útiles
+    const cita = await prisma.cita.findUnique({
+      where: { id },
+      include: {
+        horario: { include: { doctor: true } },
+        user: { select: { id: true, nombre: true, email: true } }
+      }
+    })
 
+    if (!cita) return res.status(404).json({ error: 'Cita no encontrada' })
 
+    // Autorización por rol
+    if (req.user.role === 'ADMIN') {
+      return res.json(cita)
+    }
+
+    if (req.user.role === 'PATIENT') {
+      if (cita.userId !== req.user.id) {
+        return res.status(403).json({ error: 'No autorizado' })
+      }
+      return res.json(cita)
+    }
+
+    if (req.user.role === 'DOCTOR') {
+      // TODO: cuando enlaces User -> Doctor, valida que el doctor dueño del horario sea el doctor logueado
+      // Ejemplo futuro:
+      // const doctor = await prisma.doctor.findUnique({ where: { userId: req.user.id }, select: { id: true } })
+      // if (!doctor || cita.horario?.doctorId !== doctor.id) return res.status(403).json({ error: 'No autorizado' })
+      return res.status(403).json({ error: 'No autorizado (falta mapear User->Doctor)' })
+    }
+
+    // Rol desconocido
+    return res.status(403).json({ error: 'No autorizado' })
+  }
+)
 
 app.listen(3000, () => {
   console.log('Servidor corriendo en http://localhost:3000')
