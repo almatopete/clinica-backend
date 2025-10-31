@@ -30,7 +30,7 @@ const corsOptions = {
       callback(new Error('Not allowed by CORS'))
     }
   },
-  methods: ['GET', 'POST', 'DELETE'],
+  methods: ['GET', 'POST', 'DELETE', 'PATCH'],
   credentials: true
 }
 app.use(cors(corsOptions))
@@ -71,11 +71,20 @@ app.post('/api/citas', verificarToken, validarCrearCita, handleValidation, async
 
 // ADMIN ve todas; DOCTOR podría ver las de sus horarios; PATIENT solo las propias
 app.get('/api/citas', verificarToken, async (req, res) => {
-  const where = (req.user.role === 'ADMIN')
-    ? {}
-    : (req.user.role === 'DOCTOR')
-      ? { horario: { doctor: { id: /* opcional: enlazar User->Doctor si aplicara */ -1 } } } // placeholder si no mapeas User->Doctor
-      : { userId: req.user.id }
+  let where = {}
+
+  if (req.user.role === 'ADMIN') {
+    where = {}
+  } else if (req.user.role === 'DOCTOR') {
+    const doctor = await prisma.doctor.findUnique({
+      where: { userId: req.user.id },
+      select: { id: true }
+    })
+    if (!doctor) return res.json([])
+    where = { horario: { doctorId: doctor.id } }
+  } else {
+    where = { userId: req.user.id }
+  }
 
   const citas = await prisma.cita.findMany({
     where,
@@ -84,6 +93,7 @@ app.get('/api/citas', verificarToken, async (req, res) => {
   })
   res.json(citas)
 })
+
 
 
 app.get('/api/doctores', validarFiltroDoctores, handleValidation, async (req, res) => {
@@ -347,6 +357,44 @@ app.get(
     return res.status(403).json({ error: 'No autorizado' })
   }
 )
+app.get('/api/doctor/agenda', verificarToken, requireRole('DOCTOR','ADMIN'), async (req, res) => {
+  // Si es ADMIN puedes permitir query ?doctorId=...
+  let doctorId = null
+
+  if (req.user.role === 'DOCTOR') {
+    const doctor = await prisma.doctor.findUnique({
+      where: { userId: req.user.id },
+      select: { id: true }
+    })
+    if (!doctor) return res.status(404).json({ error: 'Doctor no vinculado al usuario' })
+    doctorId = doctor.id
+  } else if (req.user.role === 'ADMIN' && req.query.doctorId) {
+    doctorId = Number(req.query.doctorId)
+  }
+
+  const where = doctorId ? { horario: { doctorId } } : {}
+  const citas = await prisma.cita.findMany({
+    where,
+    include: {
+      horario: { include: { doctor: true } },
+      user: { select: { id: true, nombre: true, email: true } }
+    },
+    orderBy: { fecha: 'asc' }
+  })
+
+  // Formato sencillo para tu vista
+  const result = citas.map(c => ({
+    id: c.id,
+    fecha: c.fecha,
+    motivo: c.motivo,
+    estado: c.estado,
+    paciente: { id: c.user?.id, nombre: c.nombre || c.user?.nombre, email: c.email || c.user?.email },
+    doctor: c.horario?.doctor?.nombre
+  }))
+
+  res.json(result)
+})
+
 
 app.listen(3000, () => {
   console.log('Servidor corriendo en http://localhost:3000')

@@ -56,14 +56,10 @@ model Doctor {
   foto         String?
   cv           String?
   horarios     Horario[]
-}
 
-model Horario {
-  id         Int      @id @default(autoincrement())
-  fechaHora  DateTime
-  doctor     Doctor   @relation(fields: [doctorId], references: [id])
-  doctorId   Int
-  cita       Cita?
+  // 🔗 Relación opcional 1–1 con User (doctor logueable)
+  userId Int?   @unique
+  user   User?  @relation(fields: [userId], references: [id])
 }
 
 model User {
@@ -74,4 +70,17 @@ model User {
   role      Role     @default(PATIENT)
   createdAt DateTime @default(now())
   citas     Cita[]
+
+  // 🔁 Lado inverso de la relación 1–1
+  doctor    Doctor?
 }
+
+
+model Horario {
+  id         Int      @id @default(autoincrement())
+  fechaHora  DateTime
+  doctor     Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId   Int
+  cita       Cita?
+}
+
